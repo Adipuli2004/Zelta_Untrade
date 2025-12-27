@@ -5,7 +5,7 @@ from tensorflow.keras import layers
 # Defining Constants
 
 WINDOW_SIZE=6
-COLUMN_NAME = "Close"
+COLUMN_NAME = "close"
 HORIZON=1
 BATCH_SIZE = 1024
 N_EPOCHS = 1000
