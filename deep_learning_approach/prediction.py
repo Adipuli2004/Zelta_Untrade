@@ -43,12 +43,12 @@ class NBeatsModel():
        
         nbeats_block_layer = NBeatsBlock(input_size=input_size,theta_size=theta_size, horizon=horizon,
                                           n_neurons=n_neurons, n_layers=n_layers,name="InitialBlock")
-        stack_input = layers.Input(shape=input_size, name="stack_input")
+        stack_input = layers.Input(shape=(input_size,), name="stack_input")
         backcast, forecast = nbeats_block_layer(stack_input)
         residuals = layers.subtract([stack_input, backcast], name=f"subtract_0")
 
         for i in range(n_stacks-1):
-            backcast, block_forecast = NBeatsBlock(input_size=input_size,theta_size=theta_size, horizon=horizon,
+            backcast, block_forecast = NBeatsBlock(input_size=(input_size,),theta_size=theta_size, horizon=horizon,
                                           n_neurons=n_neurons, n_layers=n_layers,name=f"Block_{i+1}")(residuals)
             residuals = layers.subtract([residuals, backcast], name=f"subtract_{i+1}")
             forecast = layers.add([forecast, block_forecast], name=f"add_{i+1}")
