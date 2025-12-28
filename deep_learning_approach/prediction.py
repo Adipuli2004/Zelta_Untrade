@@ -96,8 +96,8 @@ def process_data(data: pd.DataFrame, column: str, window_size:int, batch:int):
     test_dataset = tf.data.Dataset.from_tensor_slices(X)
     
     train_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
-    val_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
-    test_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
+    val_dataset = val_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
+    test_dataset = test_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
 
     return train_dataset,val_dataset,test_dataset
 
