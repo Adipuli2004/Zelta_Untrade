@@ -1,6 +1,8 @@
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras import layers
+import warnings
+warnings.filterwarnings("ignore")
 
 # Defining Constants
 
@@ -80,7 +82,7 @@ def process_data(data: pd.DataFrame, column: str, window_size:int, batch:int):
     return train_dataset,features_dataset
 
 def main():
-    data = pd.read_csv('data/btcusdt_1h_zelta.csv')
+    data = pd.read_csv('deep_learning_approach/data/btcusdt_1h_zelta.csv')
     train_dataset,features_dataset = process_data(data=data, column=COLUMN_NAME, window_size=WINDOW_SIZE, batch=BATCH_SIZE)
     model = NBeatsModel(input_size=INPUT_SIZE,
                         theta_size=THETA_SIZE,
@@ -89,7 +91,10 @@ def main():
                         n_layers=N_LAYERS,
                         n_stacks=N_STACKS)
     model.fit(train_dataset=train_dataset, epochs=N_EPOCHS)
-    model.predict(features_dataset)
+    predictions = model.predict(features_dataset)
+    predictions = pd.Series(predictions, index=data[6:].index, name='pred_close')
+    predicted_data = pd.concat([data,predictions], axis=1)
+    predicted_data.to_csv("deep_learning_approach/predicted_data.csv")
 
 if __name__ == "__main__":
    main()
