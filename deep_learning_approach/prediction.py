@@ -57,6 +57,7 @@ class NBeatsModel():
         self.model.compile(loss="mae",optimizer=tf.keras.optimizers.Adam(0.001),metrics=["mae", "mse"])
 
     def fit(self, train_dataset, val_dataset, epochs: int,):
+       
        self.model.fit(train_dataset,
                       epochs=epochs,
                       verbose=0,
@@ -79,12 +80,14 @@ def process_data(data: pd.DataFrame, column: str, window_size:int, batch:int):
         data_col_nbeats[f"{column}+{i+1}"] = data_col_nbeats[column].shift(periods=i+1) 
 
     data_nbeats = data_col_nbeats.dropna()
+
     X = data_nbeats.dropna().drop(column, axis=1)
     y = data_nbeats.dropna()[column]
+    features_dataset = tf.data.Dataset.from_tensor_slices(X)
+    labels_dataset = tf.data.Dataset.from_tensor_slices(y)
 
     split_size = int(len(X) * 0.8)
     X_val, y_val = X[split_size:], y[split_size:]
-
     val_features_dataset = tf.data.Dataset.from_tensor_slices(X_val)
     val_labels_dataset = tf.data.Dataset.from_tensor_slices(y_val)
     
