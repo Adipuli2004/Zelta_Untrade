@@ -10,7 +10,7 @@ WINDOW_SIZE=6
 COLUMN_NAME = "close"
 HORIZON=1
 BATCH_SIZE = 1024
-N_EPOCHS = 1000
+N_EPOCHS = 5000
 N_NEURONS = 512
 N_LAYERS = 4
 N_STACKS = 30
@@ -56,8 +56,15 @@ class NBeatsModel():
         self.model = tf.keras.Model(inputs=stack_input,outputs=forecast,name="N-BEATS")
         self.model.compile(loss="mae",optimizer=tf.keras.optimizers.Adam(0.001),metrics=["mae", "mse"])
 
-    def fit(self,train_dataset,epochs: int):
-       self.model.fit(train_dataset,epochs=epochs)
+    def fit(self, train_dataset, val_dataset, epochs: int,):
+       self.model.fit(train_dataset,
+                      epochs=epochs,
+                      verbose=0,
+                      validation_data=val_dataset,
+                      callbacks=[tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=200, restore_best_weights=True),
+                                tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", patience=100, verbose=1)]
+                    )
+    
     
     def predict(self, input_data):
         prediction = self.model.predict(input_data)
@@ -74,23 +81,33 @@ def process_data(data: pd.DataFrame, column: str, window_size:int, batch:int):
     data_nbeats = data_col_nbeats.dropna()
     X = data_nbeats.dropna().drop(column, axis=1)
     y = data_nbeats.dropna()[column]
-    features_dataset = tf.data.Dataset.from_tensor_slices(X)
-    labels_dataset = tf.data.Dataset.from_tensor_slices(y)
-    train_dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
-    train_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
 
-    return train_dataset,features_dataset
+    split_size = int(len(X) * 0.8)
+    X_val, y_val = X[split_size:], y[split_size:]
+
+    val_features_dataset = tf.data.Dataset.from_tensor_slices(X_val)
+    val_labels_dataset = tf.data.Dataset.from_tensor_slices(y_val)
+    
+    train_dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
+    val_dataset = tf.data.Dataset.zip((val_features_dataset, val_labels_dataset))
+    test_dataset = tf.data.Dataset.from_tensor_slices(X)
+    
+    train_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
+    val_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
+    test_dataset = train_dataset.batch(batch).prefetch(tf.data.AUTOTUNE)
+
+    return train_dataset,val_dataset,test_dataset
 
 def main():
     data = pd.read_csv('deep_learning_approach/data/btcusdt_1h_zelta.csv')
-    train_dataset,features_dataset = process_data(data=data, column=COLUMN_NAME, window_size=WINDOW_SIZE, batch=BATCH_SIZE)
+    train_dataset,val_dataset,features_dataset = process_data(data=data, column=COLUMN_NAME, window_size=WINDOW_SIZE, batch=BATCH_SIZE)
     model = NBeatsModel(input_size=INPUT_SIZE,
                         theta_size=THETA_SIZE,
                         horizon=HORIZON,
                         n_neurons=N_NEURONS,
                         n_layers=N_LAYERS,
                         n_stacks=N_STACKS)
-    model.fit(train_dataset=train_dataset, epochs=N_EPOCHS)
+    model.fit(train_dataset=train_dataset,val_dataset=val_dataset, epochs=N_EPOCHS)
     predictions = model.predict(features_dataset)
     predictions = pd.Series(predictions, index=data[6:].index, name='pred_close')
     predicted_data = pd.concat([data,predictions], axis=1)
