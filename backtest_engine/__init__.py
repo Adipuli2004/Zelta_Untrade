@@ -22,7 +22,7 @@ def perform_backtest(file_path:str, slipage = 0.002, initial_portfolio = 1000.00
     returns = []     
     trade_time = []  
     
-    for i in range(0,len(signal),2):
+    for i in range(0,2*(len(signal)//2),2):
 
         if signal['signals'].iloc[i] == 1: #long position
             entry = signal['close'].iloc[i]

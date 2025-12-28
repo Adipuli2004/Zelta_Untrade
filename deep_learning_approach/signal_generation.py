@@ -25,7 +25,19 @@ def strat(data:pd.DataFrame, data_3m: pd.DataFrame):
     trade_data = data[data['trade']!=0]
     data_3m['datetime'] = pd.to_datetime(data_3m['datetime'])
     data_3m.set_index('datetime', drop=True, inplace=True)
+    data_3m['signals'] = 0
 
+    #handling missing values in given data set
+
+    for i,j in enumerate(trade_data['datetime']):
+        try:
+            if trade_data['trade'].iloc[i]==0:
+                continue
+            data_3m['open'].loc[j]
+            data_3m['open'].loc[j+pd.DateOffset(minutes=57)]
+        except:
+            trade_data['trade'].iloc[i]=0
+        
     #transposing trades from hourly data to 3minute data for better volatility tracking
     for i in range(len(trade_data)):
         data_3m['signals'].loc[trade_data['datetime'].iloc[i]] = trade_data['trade'].iloc[i]
@@ -43,5 +55,8 @@ def main():
     final_logs = strat(data=data, data_3m=data_3m)
     final_logs.to_csv("deep_learning_approach/final_logs.csv")
     perform_backtest("deep_learning_approach/final_logs.csv") 
+
+if __name__ == "__main__":
+    main()
 
     
